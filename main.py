@@ -3,7 +3,8 @@ import requests
 from datetime import datetime
 
 URL = "https://store.steampowered.com/appreviews/"
-APPID = "1151640"
+APPID = "1190460"
+COUNT_PER_PAGE = 50
 
 DATA_DIR = 'data'
 
@@ -43,17 +44,21 @@ def parse_row(entry):
     return entry
 
 
-def generate_data(appid, size, data_path, review_type: str = 'all', filter: str = 'all'):
+def generate_data(app_id, size, data_path, review_type: str = 'all', filter_type: str = 'all'):
     index = 0
     reviews = []
     query_summary = None
+
     cursor = '*'
+    cursor_set = set()
+
     while index < size:
-        r = requests.get(url=URL + appid, params={
+        r = requests.get(url=URL + app_id, params={
             'json': 1,
             'cursor': cursor,
             'review_type': review_type,
-            'filter': filter,
+            'filter': filter_type,
+            'num_per_page': COUNT_PER_PAGE,
         })
         data = r.json()
         if query_summary is None:
@@ -62,20 +67,26 @@ def generate_data(appid, size, data_path, review_type: str = 'all', filter: str 
         index += data['query_summary']['num_reviews']
 
         print("index " + str(index))
+
+        cursor_set.add(cursor)
         cursor = data['cursor']
+
+        if cursor in cursor_set:
+            print('reached the same cursor twice!')
+            break
 
     query_summary['num_reviews'] = index
 
     pd.DataFrame(query_summary, index=[0]).to_csv(
-        '%s/summary_%s.csv' % (data_path, appid)
+        '%s/summary_%s.csv' % (data_path, app_id)
     )
     reviews = pd.DataFrame.from_records(
         [dict_flatten(review) for review in reviews]
     )
-    reviews.to_csv('%s/review_%s_%s_%s.csv' % (data_path, appid, review_type, filter))
+    reviews.to_csv('%s/review_%s_%s_%s.csv' % (data_path, app_id, review_type, filter_type))
 
 
 if __name__ == "__main__":
-    # generate_data(APPID, 100, DATA_DIR, 'positive')
-    # generate_data(APPID, 100, DATA_DIR, 'negative')
-    generate_data(APPID, 500, DATA_DIR, filter='recent')
+    generate_data(APPID, 100, DATA_DIR, 'positive')
+    generate_data(APPID, 100, DATA_DIR, 'negative')
+    generate_data(APPID, 200, DATA_DIR, filter_type='recent')
