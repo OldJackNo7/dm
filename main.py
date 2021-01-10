@@ -43,7 +43,7 @@ def parse_row(entry):
     return entry
 
 
-def generate_data(appid, size, data_path, review_type: str = 'all'):
+def generate_data(appid, size, data_path, review_type: str = 'all', filter: str = 'all'):
     index = 0
     reviews = []
     query_summary = None
@@ -53,6 +53,7 @@ def generate_data(appid, size, data_path, review_type: str = 'all'):
             'json': 1,
             'cursor': cursor,
             'review_type': review_type,
+            'filter': filter,
         })
         data = r.json()
         if query_summary is None:
@@ -71,9 +72,10 @@ def generate_data(appid, size, data_path, review_type: str = 'all'):
     reviews = pd.DataFrame.from_records(
         [dict_flatten(review) for review in reviews]
     )
-    reviews.to_csv('%s/review_%s_%s.csv' % (data_path, appid, review_type))
+    reviews.to_csv('%s/review_%s_%s_%s.csv' % (data_path, appid, review_type, filter))
 
 
 if __name__ == "__main__":
-    generate_data(APPID, 100, DATA_DIR, 'positive')
-    generate_data(APPID, 100, DATA_DIR, 'negative')
+    # generate_data(APPID, 100, DATA_DIR, 'positive')
+    # generate_data(APPID, 100, DATA_DIR, 'negative')
+    generate_data(APPID, 500, DATA_DIR, filter='recent')
