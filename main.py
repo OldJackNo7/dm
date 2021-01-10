@@ -5,7 +5,6 @@ from datetime import datetime
 URL = "https://store.steampowered.com/appreviews/"
 APPID = "1151640"
 
-PARAMS = {'json': 1, "cursor": "*"}
 DATA_DIR = 'data'
 
 
@@ -44,12 +43,17 @@ def parse_row(entry):
     return entry
 
 
-def generate_data(appid, review_fn, summary_fn):
+def generate_data(appid, size, data_path, review_type: str = 'all'):
     index = 0
     reviews = []
     query_summary = None
-    while index < 50:
-        r = requests.get(url=URL + appid, params=PARAMS)
+    cursor = '*'
+    while index < size:
+        r = requests.get(url=URL + appid, params={
+            'json': 1,
+            'cursor': cursor,
+            'review_type': review_type,
+        })
         data = r.json()
         if query_summary is None:
             query_summary = data['query_summary']
@@ -57,19 +61,19 @@ def generate_data(appid, review_fn, summary_fn):
         index += data['query_summary']['num_reviews']
 
         print("index " + str(index))
-        PARAMS['cursor'] = data['cursor']
+        cursor = data['cursor']
 
     query_summary['num_reviews'] = index
 
-    pd.DataFrame(query_summary, index=[0]).to_csv(summary_fn)
+    pd.DataFrame(query_summary, index=[0]).to_csv(
+        '%s/summary_%s.csv' % (data_path, appid)
+    )
     reviews = pd.DataFrame.from_records(
         [dict_flatten(review) for review in reviews]
     )
-    reviews.to_csv(review_fn)
+    reviews.to_csv('%s/review_%s_%s.csv' % (data_path, appid, review_type))
 
 
 if __name__ == "__main__":
-    review_fn = '%s/review_%s.csv' % (DATA_DIR, APPID)
-    summary_fn = '%s/summary_%s.csv' % (DATA_DIR, APPID)
-
-    generate_data(APPID, review_fn, summary_fn)
+    generate_data(APPID, 100, DATA_DIR, 'positive')
+    generate_data(APPID, 100, DATA_DIR, 'negative')
