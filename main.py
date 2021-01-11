@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 import requests
 from datetime import datetime
@@ -60,7 +61,8 @@ def generate_data(app_id, size, data_path, review_type: str = 'all', filter_type
             'filter': filter_type,
             'num_per_page': COUNT_PER_PAGE,
         })
-        data = r.json()
+        decoded_data = r.content.decode('utf-8-sig')
+        data = json.loads(decoded_data)
         if query_summary is None:
             query_summary = data['query_summary']
         reviews += data['reviews']
