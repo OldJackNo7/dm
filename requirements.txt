@@ -61,3 +61,5 @@ urllib3==1.26.2
 wcwidth==0.2.5
 webencodings==0.5.1
 widgetsnbextension==3.5.1
+plotly==4.14.1
+scikit-learn==0.24.0
